@@ -36,7 +36,7 @@ private:
 namespace pybind11_tests {
 namespace class_sh_trampoline_unique_ptr {
 
-class PyClass : public Class, public py::trampoline_self_life_support {
+class PyClass : public Class, public py::trampoline_self_life_support<PyClass> {
 public:
     std::unique_ptr<Class> clone() const override {
         PYBIND11_OVERRIDE_PURE(std::unique_ptr<Class>, Class, clone);

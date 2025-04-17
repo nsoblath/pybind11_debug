@@ -37,7 +37,7 @@ protected:
     Big5() : history{"DefaultConstructor"} {}
 };
 
-struct Big5Trampoline : Big5, py::trampoline_self_life_support {
+struct Big5Trampoline : Big5, py::trampoline_self_life_support<Big5Trampoline> {
     using Big5::Big5;
 };
 

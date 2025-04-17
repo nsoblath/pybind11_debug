@@ -70,7 +70,7 @@ struct SftSharedPtrStash {
     }
 };
 
-struct SftTrampoline : Sft, py::trampoline_self_life_support {
+struct SftTrampoline : Sft, py::trampoline_self_life_support<SftTrampoline> {
     using Sft::Sft;
 };
 

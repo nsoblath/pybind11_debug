@@ -18,22 +18,26 @@ PYBIND11_NAMESPACE_END(detail)
 // The original core idea for this struct goes back to PyCLIF:
 // https://github.com/google/clif/blob/07f95d7e69dca2fcf7022978a55ef3acff506c19/clif/python/runtime.cc#L37
 // URL provided here mainly to give proper credit.
+template <typename T = void>
 struct trampoline_self_life_support {
     detail::value_and_holder v_h;
+    std::shared_ptr< T > s_p;
 
     trampoline_self_life_support() = default;
 
     void activate_life_support(const detail::value_and_holder &v_h_) {
         Py_INCREF((PyObject *) v_h_.inst);
         v_h = v_h_;
+        s_p = std::static_pointer_cast< T >(v_h_.holder<smart_holder>().vptr);
     }
 
     void deactivate_life_support() {
         Py_DECREF((PyObject *) v_h.inst);
         v_h = detail::value_and_holder();
+        s_p.reset();
     }
 
-    ~trampoline_self_life_support() {
+    virtual ~trampoline_self_life_support() {
         if (v_h.inst != nullptr && v_h.vh != nullptr) {
             void *value_void_ptr = v_h.value_ptr();
             if (value_void_ptr != nullptr) {
@@ -45,6 +49,7 @@ struct trampoline_self_life_support {
                 PyGILState_Release(threadstate);
             }
         }
+        s_p.reset();
     }
 
     // For the next two, the default implementations generate undefined behavior (ASAN failures

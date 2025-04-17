@@ -576,7 +576,7 @@ handle smart_holder_from_unique_ptr(std::unique_ptr<T, D> &&src,
     const detail::type_info *tinfo = st.second;
     if (handle existing_inst = find_registered_python_instance(src_raw_void_ptr, tinfo)) {
         auto *self_life_support
-            = dynamic_raw_ptr_cast_if_possible<trampoline_self_life_support>(src.get());
+            = dynamic_raw_ptr_cast_if_possible<trampoline_self_life_support<T>>(src.get());
         if (self_life_support != nullptr) {
             value_and_holder &v_h = self_life_support->v_h;
             if (v_h.inst != nullptr && v_h.vh != nullptr) {
@@ -821,7 +821,7 @@ struct load_helper : value_and_holder_helper {
         T *raw_type_ptr = static_cast<T *>(raw_void_ptr);
 
         auto *self_life_support
-            = dynamic_raw_ptr_cast_if_possible<trampoline_self_life_support>(raw_type_ptr);
+            = dynamic_raw_ptr_cast_if_possible<trampoline_self_life_support<T>>(raw_type_ptr);
         if (self_life_support == nullptr && python_instance_is_alias) {
             throw value_error("Alias class (also known as trampoline) does not inherit from "
                               "py::trampoline_self_life_support, therefore the ownership of this "
