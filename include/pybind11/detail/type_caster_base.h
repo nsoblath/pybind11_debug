@@ -35,6 +35,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 PYBIND11_NAMESPACE_BEGIN(detail)
 
@@ -755,20 +757,28 @@ struct load_helper : value_and_holder_helper {
 
     std::shared_ptr<T> load_as_shared_ptr(void *void_raw_ptr,
                                           handle responsible_parent = nullptr) const {
+        //std::cerr << "####### in load_as_shared_ptr()" << std::endl;
         if (!have_holder()) {
             return nullptr;
         }
         throw_if_uninitialized_or_disowned_holder(typeid(T));
         smart_holder &hld = holder();
         hld.ensure_is_not_disowned("load_as_shared_ptr");
+        // &&&&&&&
+        auto *type_raw_ptr = static_cast<T *>(void_raw_ptr);
+        auto *shared_ptr_life_support
+            = dynamic_raw_ptr_cast_if_possible<trampoline_shared_ptr_life_support<T>>(type_raw_ptr);
+        std::cerr << "shared_ptr_life_support: " << shared_ptr_life_support << std::endl;
+        if (shared_ptr_life_support != nullptr) {
+            shared_ptr_life_support->activate_life_support(hld);
+        }
         if (hld.vptr_is_using_noop_deleter) {
             if (responsible_parent) {
                 return make_shared_ptr_with_responsible_parent(static_cast<T *>(void_raw_ptr),
                                                                responsible_parent);
             }
             throw std::runtime_error("Non-owning holder (load_as_shared_ptr).");
-        }
-        auto *type_raw_ptr = static_cast<T *>(void_raw_ptr);
+        }        
         if (python_instance_is_alias) {
             auto *vptr_gd_ptr = std::get_deleter<memory::guarded_delete>(hld.vptr);
             if (vptr_gd_ptr != nullptr) {

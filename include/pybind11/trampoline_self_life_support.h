@@ -8,6 +8,8 @@
 #include "detail/using_smart_holder.h"
 #include "detail/value_and_holder.h"
 
+#include <iostream>
+
 PYBIND11_NAMESPACE_BEGIN(PYBIND11_NAMESPACE)
 
 PYBIND11_NAMESPACE_BEGIN(detail)
@@ -55,6 +57,30 @@ struct trampoline_self_life_support {
     // These should never be needed (please provide test cases if you think they are).
     trampoline_self_life_support &operator=(const trampoline_self_life_support &) = delete;
     trampoline_self_life_support &operator=(trampoline_self_life_support &&) = delete;
+};
+
+template <typename T>
+struct trampoline_shared_ptr_life_support {
+    std::shared_ptr<T> ptr;
+
+    void activate_life_support(const smart_holder &sh_) {
+        std::cerr << "Activating shared_ptr life support" << std::endl;
+        ptr = sh_.as_shared_ptr<T>();
+    }
+
+    void deactivate_life_support() {
+        std::cerr << "Deactivating shared_ptr life support" << std::endl;
+        ptr.reset();
+    }
+
+    trampoline_shared_ptr_life_support() = default;
+    trampoline_shared_ptr_life_support(const trampoline_shared_ptr_life_support &) = default;
+    trampoline_shared_ptr_life_support(trampoline_shared_ptr_life_support &&) = default;
+    ~trampoline_shared_ptr_life_support() = default;
+
+    trampoline_shared_ptr_life_support &operator=(const trampoline_shared_ptr_life_support &) = delete;
+    trampoline_shared_ptr_life_support &operator=(trampoline_shared_ptr_life_support &&) = delete;
+
 };
 
 PYBIND11_NAMESPACE_END(PYBIND11_NAMESPACE)

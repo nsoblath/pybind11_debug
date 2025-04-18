@@ -25,7 +25,7 @@ struct WpBase {
     virtual ~WpBase() = default;
 };
 
-struct PyWpBase : WpBase {
+struct PyWpBase : WpBase, py::trampoline_shared_ptr_life_support<PyWpBase> {
     using WpBase::WpBase;
     bool is_base_used() override { PYBIND11_OVERRIDE(bool, WpBase, is_base_used); }
 };
