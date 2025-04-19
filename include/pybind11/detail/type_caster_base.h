@@ -763,8 +763,10 @@ struct load_helper : value_and_holder_helper {
         hld.ensure_is_not_disowned("load_as_shared_ptr");
         if (hld.vptr_is_using_noop_deleter) {
             if (responsible_parent) {
-                return make_shared_ptr_with_responsible_parent(static_cast<T *>(void_raw_ptr),
-                                                               responsible_parent);
+                std::shared_ptr<T> to_be_released(make_shared_ptr_with_responsible_parent(static_cast<T *>(void_raw_ptr),
+                                                               responsible_parent));
+                hld.set_wp_ls(to_be_released);
+                return to_be_released;
             }
             throw std::runtime_error("Non-owning holder (load_as_shared_ptr).");
         }
@@ -774,11 +776,14 @@ struct load_helper : value_and_holder_helper {
             if (vptr_gd_ptr != nullptr) {
                 std::shared_ptr<void> released_ptr = vptr_gd_ptr->released_ptr.lock();
                 if (released_ptr) {
-                    return std::shared_ptr<T>(released_ptr, type_raw_ptr);
+                    std::shared_ptr<T> to_be_released( std::shared_ptr<T>(released_ptr, type_raw_ptr));
+                    hld.set_wp_ls(to_be_released);
+                    return to_be_released;
                 }
                 std::shared_ptr<T> to_be_released(
                     type_raw_ptr, shared_ptr_trampoline_self_life_support(loaded_v_h.inst));
                 vptr_gd_ptr->released_ptr = to_be_released;
+                hld.set_wp_ls(to_be_released);
                 return to_be_released;
             }
             auto *sptsls_ptr = std::get_deleter<shared_ptr_trampoline_self_life_support>(hld.vptr);
@@ -791,8 +796,10 @@ struct load_helper : value_and_holder_helper {
                 }
             }
             if (sptsls_ptr != nullptr || !memory::type_has_shared_from_this(type_raw_ptr)) {
-                return std::shared_ptr<T>(
-                    type_raw_ptr, shared_ptr_trampoline_self_life_support(loaded_v_h.inst));
+                std::shared_ptr<T> to_be_released( std::shared_ptr<T>(
+                    type_raw_ptr, shared_ptr_trampoline_self_life_support(loaded_v_h.inst)));
+                hld.set_wp_ls(to_be_released);
+                return to_be_released;
             }
             if (hld.vptr_is_external_shared_ptr) {
                 pybind11_fail("smart_holder_type_casters load_as_shared_ptr failure: not "
@@ -803,7 +810,9 @@ struct load_helper : value_and_holder_helper {
                 "smart_holder_type_casters: load_as_shared_ptr failure: internal inconsistency.");
         }
         std::shared_ptr<void> void_shd_ptr = hld.template as_shared_ptr<void>();
-        return std::shared_ptr<T>(void_shd_ptr, type_raw_ptr);
+        std::shared_ptr<T> to_be_released( std::shared_ptr<T>(void_shd_ptr, type_raw_ptr));
+        hld.set_wp_ls(to_be_released);
+        return to_be_released;
     }
 
     template <typename D>

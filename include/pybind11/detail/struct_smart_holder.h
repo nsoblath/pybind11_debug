@@ -137,6 +137,17 @@ inline bool is_std_default_delete(const std::type_info &rtti_deleter) {
            || rtti_deleter == typeid(std::default_delete<T const>);
 }
 
+struct weak_ptr_life_support_base {
+};
+
+template <typename T>
+struct weak_ptr_life_support_typed : weak_ptr_life_support_base {
+    std::shared_ptr<T> tptr;
+    weak_ptr_life_support_typed(std::shared_ptr<T> ptr) {
+        tptr = ptr;
+    }
+};
+
 struct smart_holder {
     const std::type_info *rtti_uqp_del = nullptr;
     std::shared_ptr<void> vptr;
@@ -145,6 +156,12 @@ struct smart_holder {
     bool vptr_is_external_shared_ptr : 1;
     bool is_populated : 1;
     bool is_disowned : 1;
+
+    std::unique_ptr<weak_ptr_life_support_base> wp_ls;
+    template <typename T>
+    void set_wp_ls(std::shared_ptr<T> ptr) {
+        wp_ls.reset(new weak_ptr_life_support_typed<T>(ptr));
+    }
 
     // Design choice: smart_holder is movable but not copyable.
     smart_holder(smart_holder &&) = default;
